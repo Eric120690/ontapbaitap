@@ -4,73 +4,131 @@
 <meta charset="UTF-8">
 <title>Test API — llm.chiasegpu.vn</title>
 <style>
-  body { font-family: sans-serif; max-width: 600px; margin: 60px auto; padding: 0 20px; background: #111; color: #eee; }
-  label { font-size: 13px; color: #aaa; }
-  input, textarea { width: 100%; padding: 10px; margin: 6px 0 16px; background: #222; border: 1px solid #444; border-radius: 8px; color: #eee; box-sizing: border-box; font-size: 14px; }
-  button { padding: 10px 28px; background: #7c6aff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
-  #result { margin-top: 20px; padding: 16px; background: #1c1c2e; border-radius: 8px; white-space: pre-wrap; font-size: 14px; min-height: 60px; line-height: 1.6; }
+  body { font-family: sans-serif; max-width: 680px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  h2 { color: #7c6aff; }
+  label { font-size: 13px; color: #aaa; display: block; margin-bottom: 4px; }
+  input { width: 100%; padding: 10px; margin-bottom: 16px; background: #222; border: 1px solid #444; border-radius: 8px; color: #eee; box-sizing: border-box; font-size: 14px; }
+  .btn-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  button { padding: 10px 20px; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn1 { background: #7c6aff; }
+  .btn2 { background: #ff6a9a; }
+  .btn3 { background: #20a070; }
+  .result-box { padding: 16px; background: #1c1c2e; border-radius: 8px; white-space: pre-wrap; font-size: 13px; min-height: 60px; line-height: 1.7; margin-bottom: 14px; border-left: 3px solid #333; }
   .ok { color: #4ade80; font-weight: bold; }
   .err { color: #f87171; font-weight: bold; }
+  .info { color: #ffd96a; }
+  .tag { font-size: 11px; font-weight: bold; letter-spacing: 1px; color: #aaa; margin-bottom: 6px; }
 </style>
 </head>
 <body>
 
-<h2>🔌 Test API <span style="color:#7c6aff">llm.chiasegpu.vn</span></h2>
+<h2>🔌 Test API llm.chiasegpu.vn</h2>
 
 <label>API Key</label>
 <input id="apiKey" type="password" placeholder="sk-...">
 
-<label>Tin nhắn test</label>
-<input id="message" type="text" value="Hello! Trả lời bằng tiếng Việt nhé.">
+<div class="btn-row">
+  <button class="btn1" onclick="testChatCompletions()" id="btn1">① Test /chat/completions</button>
+  <button class="btn2" onclick="testMessages()" id="btn2">② Test /messages</button>
+  <button class="btn3" onclick="testModels()" id="btn3">③ GET /models</button>
+</div>
 
-<button onclick="testAPI()" id="btn">▶ Gửi test</button>
+<div class="tag">KẾT QUẢ — /v1/chat/completions (format OpenAI)</div>
+<div class="result-box" id="r1">Chưa test...</div>
 
-<div id="result" style="color:#666">Kết quả sẽ hiển thị ở đây...</div>
+<div class="tag">KẾT QUẢ — /v1/messages (format Anthropic)</div>
+<div class="result-box" id="r2">Chưa test...</div>
+
+<div class="tag">KẾT QUẢ — /v1/models</div>
+<div class="result-box" id="r3">Chưa test...</div>
 
 <script>
-async function testAPI() {
-  const apiKey = document.getElementById('apiKey').value.trim();
-  const message = document.getElementById('message').value.trim();
-  const result = document.getElementById('result');
-  const btn = document.getElementById('btn');
+function getKey() {
+  const k = document.getElementById('apiKey').value.trim();
+  if (!k) { alert('Nhập API Key trước!'); return null; }
+  return k;
+}
 
-  if (!apiKey) { result.innerHTML = '<span class="err">⚠ Vui lòng nhập API Key!</span>'; return; }
-  if (!message) { result.innerHTML = '<span class="err">⚠ Vui lòng nhập tin nhắn!</span>'; return; }
-
-  btn.disabled = true;
-  btn.textContent = '⏳ Đang gửi...';
-  result.innerHTML = 'Đang kết nối đến <b>llm.chiasegpu.vn</b>...';
-
+async function testChatCompletions() {
+  const key = getKey(); if (!key) return;
+  const btn = document.getElementById('btn1');
+  const box = document.getElementById('r1');
+  btn.disabled = true; box.innerHTML = '⏳ Đang gọi /v1/chat/completions...';
   try {
     const resp = await fetch('https://llm.chiasegpu.vn/v1/chat/completions', {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4.6',
+        max_tokens: 100,
+        messages: [{ role: 'user', content: 'Chào! Trả lời ngắn thôi nhé.' }]
+      })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      box.innerHTML = `<span class="err">✗ HTTP ${resp.status}</span>\n${JSON.stringify(data, null, 2)}`;
+    } else {
+      const content = data.choices?.[0]?.message?.content;
+      box.innerHTML = `<span class="ok">✓ THÀNH CÔNG!</span>\n\nPhản hồi: ${content}`;
+    }
+  } catch(e) {
+    box.innerHTML = `<span class="err">✗ ${e.message}</span>\n\n${e.message.includes('fetch') ? '⚠ CORS bị chặn — cần chạy trên server (không phải file://)' : ''}`;
+  }
+  btn.disabled = false;
+}
+
+async function testMessages() {
+  const key = getKey(); if (!key) return;
+  const btn = document.getElementById('btn2');
+  const box = document.getElementById('r2');
+  btn.disabled = true; box.innerHTML = '⏳ Đang gọi /v1/messages...';
+  try {
+    const resp = await fetch('https://llm.chiasegpu.vn/v1/messages', {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${key}`,
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4.6',
-        max_tokens: 500,
-        messages: [{ role: 'user', content: message }]
+        max_tokens: 100,
+        messages: [{ role: 'user', content: 'Chào! Trả lời ngắn thôi nhé.' }]
       })
     });
-
     const data = await resp.json();
-
     if (!resp.ok) {
-      result.innerHTML = `<span class="err">✗ Lỗi ${resp.status}</span>\n\n${JSON.stringify(data, null, 2)}`;
+      box.innerHTML = `<span class="err">✗ HTTP ${resp.status}</span>\n${JSON.stringify(data, null, 2)}`;
     } else {
-      const content = data.choices?.[0]?.message?.content || JSON.stringify(data, null, 2);
-      result.innerHTML = `<span class="ok">✓ API hoạt động!</span>\n\n${content}`;
+      const content = data.content?.[0]?.text;
+      box.innerHTML = `<span class="ok">✓ THÀNH CÔNG!</span>\n\nPhản hồi: ${content}`;
     }
-  } catch (err) {
-    result.innerHTML = `<span class="err">✗ ${err.message}</span>\n\n` +
-      (err.message.includes('fetch') ? '⚠ Bị chặn CORS khi mở file:// — hãy upload lên GitHub Pages để test.' : '');
+  } catch(e) {
+    box.innerHTML = `<span class="err">✗ ${e.message}</span>\n\n${e.message.includes('fetch') ? '⚠ CORS bị chặn — cần chạy trên server (không phải file://)' : ''}`;
   }
-
   btn.disabled = false;
-  btn.textContent = '▶ Gửi test';
+}
+
+async function testModels() {
+  const key = getKey(); if (!key) return;
+  const btn = document.getElementById('btn3');
+  const box = document.getElementById('r3');
+  btn.disabled = true; box.innerHTML = '⏳ Đang gọi /v1/models...';
+  try {
+    const resp = await fetch('https://llm.chiasegpu.vn/v1/models', {
+      headers: { 'Authorization': `Bearer ${key}` }
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      box.innerHTML = `<span class="err">✗ HTTP ${resp.status}</span>\n${JSON.stringify(data, null, 2)}`;
+    } else {
+      box.innerHTML = `<span class="ok">✓ THÀNH CÔNG!</span>\n\n${JSON.stringify(data, null, 2)}`;
+    }
+  } catch(e) {
+    box.innerHTML = `<span class="err">✗ ${e.message}</span>\n\n${e.message.includes('fetch') ? '⚠ CORS bị chặn — cần chạy trên server (không phải file://)' : ''}`;
+  }
+  btn.disabled = false;
 }
 </script>
 </body>
