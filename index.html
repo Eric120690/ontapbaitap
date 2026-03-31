@@ -185,11 +185,11 @@
 <header class="header">
   <div>
     <div class="logo">LEXON<span class="logo-dot">.</span></div>
-    <div class="header-sub">Vocabulary Master — Powered by Claude 021866a411104e60e55f4541ab1ba1aec5d6c02f3fae0b599c64e36fe081ddec </div>
+    <div class="header-sub">Vocabulary Master — Powered by Claude</div>
   </div>
   <div class="header-right">
-    <span style="font-size:12px;color:var(--text-muted)">API Key:</span>
-    <input class="api-key-input" id="apiKeyInput" oninput="scheduleSave()" placeholder="Nhập API Key của bạn..." type="password">
+    <span style="font-size:12px;color:var(--accent3)">✦ API đã kết nối</span>
+    <input id="apiKeyInput" type="hidden" value="sk-021866a411104e60e55f4541ab1ba1aec5d6c02f3fae0b599c64e36fe081ddec">
   </div>
 </header>
 
@@ -390,7 +390,6 @@ function goStep(n) {
 async function classifyVocab() {
   const input = document.getElementById('vocabInput').value.trim();
   if (!input) return alert('Vui lòng nhập từ vựng!');
-  if (!getApiKey()) return alert('Vui lòng nhập API Key!');
   const btn = document.getElementById('classifyBtn');
   const status = document.getElementById('classify-status');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Đang phân loại...'; status.textContent = '';
@@ -583,7 +582,6 @@ function renderExerciseUI(i) {
 }
 
 async function generateAllExercises(i) {
-  if (!getApiKey()) return alert('Vui lòng nhập API Key!');
   const gs = groupStates[i];
   const g = globalGroups[i];
   const wordList = g.words.map(w=>`${w.en}: ${w.vi}`).join('\n');
